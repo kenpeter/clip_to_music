@@ -17,157 +17,151 @@ const audioPath = __dirname + "/audio";
 const exec = require('child_process').exec;
 
 // now rename promise
-var renamePromise = new Promise((resolve, reject) => {
-
+var renamePromise = () => { return new Promise((resolve, reject) => {
   glob(videoPath + "/**/*.mp4", (er, files) => {
-    Promise.each(files, (singleClipFile) => {
-      return new Promise((resolve1, reject1) => {
-        let arr = singleClipFile.split("/");
-        let lastElement = arr[arr.length - 1];
-        let tmpFileName = lastElement.replace(/[&\/\\#,+()$~%'":*?<>{}\ ]/g, "_");
-        let tmpFullFile = videoPath + "/"+ tmpFileName;
+      Promise.each(files, (singleClipFile) => {
+        return new Promise((resolve1, reject1) => {
+          let arr = singleClipFile.split("/");
+          let lastElement = arr[arr.length - 1];
+          let tmpFileName = lastElement.replace(/[&\/\\#,+()$~%'":*?<>{}\ ]/g, "_");
+          let tmpFullFile = videoPath + "/"+ tmpFileName;
 
-        // rename it
-        fs.rename(singleClipFile, tmpFullFile, function(err) {
-          if ( err ) console.log('ERROR: ' + err);
+          // rename it
+          fs.rename(singleClipFile, tmpFullFile, function(err) {
+            if ( err ) console.log('ERROR: ' + err);
 
-          console.log("-- Rename one file --");
-          console.log(tmpFullFile);
-          resolve1();
-        }); // end rename
+            console.log("-- Rename one file --");
+            console.log(tmpFullFile);
+            resolve1();
+          }); // end rename
+        });
+      })
+      .then(() => {
+        console.log('--- rename all files done ---');
+        resolve();
       });
-    })
-    .then(() => {
-      console.log('--- rename all files done ---');
-      resolve();
     });
-  });
 
-}); // end promise
+  }); // end promise
+};
+
 
 // music promise
-var musicPromise = new Promise((resolve, reject) => {
-  glob(videoPath + "/**/*.mp4", (er, files) => {
-    Promise.each(files, (singleClipFile) => {
-      return new Promise((resolve1, reject1) => {
-        // split
-        let arr = singleClipFile.split("/");
+var musicPromise = () => { new Promise((resolve, reject) => {
+    glob(videoPath + "/**/*.mp4", (er, files) => {
+      Promise.each(files, (singleClipFile) => {
+        return new Promise((resolve1, reject1) => {
+          // test
+          console.log('-- music promise --');
+          console.log(singleClipFile);
 
-        // e.g. xxxx.mp4
-        let clipFile = arr[arr.length - 1];
+          // split
+          let arr = singleClipFile.split("/");
 
-        // e.g. xxxx no mp4
-        let fileName = clipFile.replace(/\.[^/.]+$/, "");
+          // e.g. xxxx.mp4
+          let clipFile = arr[arr.length - 1];
 
-        // music file name
-        let musicFile = fileName + '.mp3';
+          // e.g. xxxx no mp4
+          let fileName = clipFile.replace(/\.[^/.]+$/, "");
 
-        // set source
-        let proc = new ffmpeg({source: singleClipFile});
+          // music file name
+          let musicFile = fileName + '.mp3';
 
-        // set ffmpeg path
-        proc.setFfmpegPath('/usr/bin/ffmpeg');
+          // set source
+          let proc = new ffmpeg({source: singleClipFile});
 
-        // save mp3
-        proc.output("./audio/" + musicFile);
+          // set ffmpeg path
+          proc.setFfmpegPath('/usr/bin/ffmpeg');
 
-        // proc on error
-        proc.on('error', (err) => {
-          console.log(err);
+          // save mp3
+          proc.output("./audio/" + musicFile);
+
+          // proc on error
+          proc.on('error', (err) => {
+            console.log(err);
+          });
+
+          // done mp3 conversion
+          proc.on('end', (x) => {
+            console.log("single mp3 done!");
+            console.log(x);
+            // it is resolve1..............
+            resolve1();
+          });
+
+          // Run !!!!!!!!!!!!!
+          proc.run();
+
         });
-
-        // done mp3 conversion
-        proc.on('end', (x) => {
-          console.log("single mp3 done!");
-          console.log(x);
-          // it is resolve1..............
-          resolve1();
-        });
-
-        // Run !!!!!!!!!!!!!
-        proc.run();
-
+      })
+      .then(() => {
+        console.log('--------- all mp3 conversion done --------');
+        resolve();
       });
-    })
-    .then(() => {
-      console.log('--------- all mp3 conversion done --------');
-      resolve();
-    });
 
-  }); // end glob
-});
+    }); // end glob
+  });
+};
 
 // adb kill
-var adbKillPromise = new Promise((resolve, reject) => {
+var adbKillPromise = () => { return new Promise((resolve, reject) => {
   exec("adb kill-server", (err, stdout, stderr) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
+      if (err) {
+        console.error(err);
+        return;
+      }
 
-    console.log(stdout);
-    console.log('---adb kill---');
-    resolve();
-  });
-});
-
-// adb start
-var adbStartPromise = new Promise((resolve, reject) => {
-  exec("adb start-server", (err, stdout, stderr) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-
-    console.log(stdout);
-    console.log('---adb start---');
-    resolve();
-  });
-});
-
-// adb push promise
-var adbPushPromise = new Promise((resolve, reject) => {
-  //
-  glob(audioPath + "/**/*.mp3", (er, files) => {
-    Promise.each(files, (singleMusicFile) => {
-      return new Promise((resolve1, reject1) => {
-        let cmd = "adb push" + " " + singleMusicFile + " " + "/sdcard/Music";
-        exec(cmd, (err, stdout, stderr) => {
-          console.log(cmd);
-          resolve1();
-        });
-      });
-    })
-    .then(() => {
-      console.log('---- done push all music ---');
+      console.log(stdout);
+      console.log('---adb kill---');
       resolve();
     });
-
   });
+};
 
-});
+// adb start
+var adbStartPromise = () => { return new Promise((resolve, reject) => {
+    exec("adb start-server", (err, stdout, stderr) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
 
+      console.log(stdout);
+      console.log('---adb start---');
+      resolve();
+    });
+  });
+};
 
-// define your func
-function puts(error, stdout, stderr) {
-  console.log(stdout)
-}
+// adb push promise
+var adbPushPromise = () => { return new Promise((resolve, reject) => {
+  glob(audioPath + "/**/*.mp3", (er, files) => {
+      Promise.each(files, (singleMusicFile) => {
+        return new Promise((resolve1, reject1) => {
+          let cmd = "adb push" + " " + singleMusicFile + " " + "/sdcard/Music";
+          exec(cmd, (err, stdout, stderr) => {
+            console.log(cmd);
+            resolve1();
+          });
+        });
+      })
+      .then(() => {
+        console.log('---- done push all music ---');
+        resolve();
+      });
+
+    });
+  });
+};
 
 // Run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-renamePromise
-  .then(() => {
-    return musicPromise;
-  })
-  .then(() => {
-    return adbKillPromise;
-  })
-  .then(() => {
-    return adbStartPromise;
-  })
-  .then(() => {
-    return adbPushPromise;
-  })
+renamePromise()
+  .then(musicPromise)
+  .then(adbKillPromise)
+  .then(adbStartPromise)
+  .then(adbPushPromise)
   .then(() => {
     console.log('---- all done----');
     process.exit(0);
-  });
+  })
+  .catch(err => { /* handler error here */});
