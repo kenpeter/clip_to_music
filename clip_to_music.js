@@ -18,31 +18,36 @@ const exec = require('child_process').exec;
 
 // now rename promise
 var renamePromise = new Promise((resolve, reject) => {
-  // search all mp4
-  glob(videoPath + "/**/*.mp4", function (er, files) {
-    // map each file
-    files.map(function(singleFile){
-      // build tmp name
-      let arr = singleFile.split("/");
-      let lastElement = arr[arr.length - 1];
-      let tmpFileName = lastElement.replace(/[&\/\\#,+()$~%'":*?<>{}\ ]/g, "_");
-      let tmpFullFile = videoPath + "/"+ tmpFileName;
 
-      // rename it
-      fs.rename(singleFile, tmpFullFile, function(err) {
-        if ( err ) console.log('ERROR: ' + err);
+  glob(videoPath + "/**/*.mp4", (er, files) => {
+    Promise.each(files, (singleClipFile) => {
+      return new Promise((resolve1, reject1) => {
+        let arr = singleClipFile.split("/");
+        let lastElement = arr[arr.length - 1];
+        let tmpFileName = lastElement.replace(/[&\/\\#,+()$~%'":*?<>{}\ ]/g, "_");
+        let tmpFullFile = videoPath + "/"+ tmpFileName;
 
-        console.log("-- Rename one file --");
-        console.log(tmpFullFile);
-        resolve();
-      }); // end rename
-    }); // end map
-  }); // end glob
+        // rename it
+        fs.rename(singleClipFile, tmpFullFile, function(err) {
+          if ( err ) console.log('ERROR: ' + err);
+
+          console.log("-- Rename one file --");
+          console.log(tmpFullFile);
+          resolve1();
+        }); // end rename
+      });
+    })
+    .then(() => {
+      console.log('--- rename all files done ---');
+      resolve();
+    });
+  });
+
 }); // end promise
 
 // music promise
 var musicPromise = new Promise((resolve, reject) => {
-  glob(videoPath + "/**/*.mp4", function (er, files) {
+  glob(videoPath + "/**/*.mp4", (er, files) => {
     Promise.each(files, (singleClipFile) => {
       return new Promise((resolve1, reject1) => {
         // split
@@ -126,7 +131,7 @@ var adbPushPromise = new Promise((resolve, reject) => {
   glob(audioPath + "/**/*.mp3", (er, files) => {
     Promise.each(files, (singleMusicFile) => {
       return new Promise((resolve1, reject1) => {
-        let cmd = "adb push" + " " + singleFile + " " + "/sdcard/Music";
+        let cmd = "adb push" + " " + singleMusicFile + " " + "/sdcard/Music";
         exec(cmd, (err, stdout, stderr) => {
           console.log(cmd);
           resolve1();
