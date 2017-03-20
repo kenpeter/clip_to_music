@@ -47,7 +47,7 @@ function renamePromise() { return new Promise((resolve, reject) => {
 
 
 // music promise
-function musicPromise() { new Promise((resolve, reject) => {
+function musicPromise() { return new Promise((resolve, reject) => {
     glob(videoPath + "/**/*.mp4", (er, files) => {
       Promise.each(files, (singleClipFile) => {
         return new Promise((resolve1, reject1) => {
@@ -67,30 +67,20 @@ function musicPromise() { new Promise((resolve, reject) => {
           // music file name
           let musicFile = fileName + '.mp3';
 
-          // set source
-          let proc = new ffmpeg({source: singleClipFile});
+          //
+          ffmpeg(singleClipFile)
+            .setFfmpegPath('/usr/bin/ffmpeg')
+            .output("./audio/" + musicFile)
+            .on('error', function(err) {
+              console.log('An error occurred: ' + err.message);
+            })
+            .on('end', function() {
+              console.log('Processing finished !');
 
-          // set ffmpeg path
-          proc.setFfmpegPath('/usr/bin/ffmpeg');
-
-          // save mp3
-          proc.output("./audio/" + musicFile);
-
-          // proc on error
-          proc.on('error', (err) => {
-            console.log(err);
-          });
-
-          // done mp3 conversion
-          proc.on('end', (x) => {
-            console.log("single mp3 done!");
-            console.log(x);
-            // it is resolve1..............
-            resolve1();
-          });
-
-          // Run !!!!!!!!!!!!!
-          proc.run();
+              // .............
+              resolve1();
+            })
+            .run();
 
         });
       })
@@ -156,10 +146,18 @@ function adbPushPromise() { return new Promise((resolve, reject) => {
 
 // Run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 renamePromise()
-  .then(musicPromise)
-  .then(adbKillPromise)
-  .then(adbStartPromise)
-  .then(adbPushPromise)
+  .then(() => {
+    return musicPromise();
+  })
+  .then(() => {
+    return adbKillPromise();
+  })
+  .then(() => {
+    return adbStartPromise();
+  })
+  .then(() => {
+    return adbPushPromise();
+  })
   .then(() => {
     console.log('---- all done----');
     process.exit(0);
