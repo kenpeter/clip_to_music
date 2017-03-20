@@ -17,7 +17,7 @@ const audioPath = __dirname + "/audio";
 const exec = require('child_process').exec;
 
 // now rename promise
-var renamePromise = () => { return new Promise((resolve, reject) => {
+function renamePromise() { return new Promise((resolve, reject) => {
   glob(videoPath + "/**/*.mp4", (er, files) => {
       Promise.each(files, (singleClipFile) => {
         return new Promise((resolve1, reject1) => {
@@ -47,7 +47,7 @@ var renamePromise = () => { return new Promise((resolve, reject) => {
 
 
 // music promise
-var musicPromise = () => { new Promise((resolve, reject) => {
+function musicPromise() { new Promise((resolve, reject) => {
     glob(videoPath + "/**/*.mp4", (er, files) => {
       Promise.each(files, (singleClipFile) => {
         return new Promise((resolve1, reject1) => {
@@ -104,7 +104,7 @@ var musicPromise = () => { new Promise((resolve, reject) => {
 };
 
 // adb kill
-var adbKillPromise = () => { return new Promise((resolve, reject) => {
+function adbKillPromise() { return new Promise((resolve, reject) => {
   exec("adb kill-server", (err, stdout, stderr) => {
       if (err) {
         console.error(err);
@@ -119,7 +119,7 @@ var adbKillPromise = () => { return new Promise((resolve, reject) => {
 };
 
 // adb start
-var adbStartPromise = () => { return new Promise((resolve, reject) => {
+function adbStartPromise() { return new Promise((resolve, reject) => {
     exec("adb start-server", (err, stdout, stderr) => {
       if (err) {
         console.error(err);
@@ -134,7 +134,7 @@ var adbStartPromise = () => { return new Promise((resolve, reject) => {
 };
 
 // adb push promise
-var adbPushPromise = () => { return new Promise((resolve, reject) => {
+function adbPushPromise() { return new Promise((resolve, reject) => {
   glob(audioPath + "/**/*.mp3", (er, files) => {
       Promise.each(files, (singleMusicFile) => {
         return new Promise((resolve1, reject1) => {
@@ -164,4 +164,7 @@ renamePromise()
     console.log('---- all done----');
     process.exit(0);
   })
-  .catch(err => { /* handler error here */});
+  .catch(err => {
+    console.log('Error', err);
+    process.exit(1);
+  });
